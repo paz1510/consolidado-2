@@ -1,0 +1,213 @@
+#include <iostream>
+#include <string>
+#include <fstream>
+
+using namespace std;
+
+// INTEGRANTE 1: TEMA - GESTOR DE PROCESOS (LISTA ENLAZADA COMPLETADA)
+struct Proceso {
+    int id;
+    string nombre;
+    int prioridad;
+    Proceso* siguiente;
+};
+
+class GestorProcesos {
+public:
+    Proceso* cabeza = NULL;
+
+    void insertar(int _id, string _nom, int _prio) {
+        Proceso* nuevo = new Proceso{_id, _nom, _prio, cabeza};
+        cabeza = nuevo;
+    }
+
+    Proceso* buscar(int _id) {
+        Proceso* temp = cabeza;
+        while (temp != NULL) {
+            if (temp->id == _id) return temp;
+            temp = temp->siguiente;
+        }
+        return NULL;
+    }
+
+    void modificarPrioridad(int _id, int nuevaPrio) {
+        Proceso* p = buscar(_id);
+        if (p != NULL) p->prioridad = nuevaPrio;
+    }
+
+    void eliminar(int _id) {
+        Proceso* actual = cabeza;
+        Proceso* anterior = NULL;
+        while (actual != NULL && actual->id != _id) {
+            anterior = actual;
+            actual = actual->siguiente;
+        }
+        if (actual == NULL) return;
+        if (anterior == NULL) cabeza = cabeza->siguiente;
+        else anterior->siguiente = actual->siguiente;
+        delete actual;
+    }
+};
+
+// INTEGRANTE 2: TEMA - PLANIFICADOR DE CPU (COLA DE PRIORIDAD COMPLETADA)
+struct NodoCola {
+    int id;
+    int prioridad;
+    NodoCola* siguiente;
+};
+
+class PlanificadorCPU {
+public:
+    NodoCola* frente = NULL;
+
+    void encolar(int _id, int _prio) {
+        NodoCola* nuevo = new NodoCola{_id, _prio, NULL};
+        if (frente == NULL || _prio > frente->prioridad) {
+            nuevo->siguiente = frente;
+            frente = nuevo;
+        } else {
+            NodoCola* temp = frente;
+            while (temp->siguiente != NULL && temp->siguiente->prioridad >= _prio) {
+                temp = temp->siguiente;
+            }
+            nuevo->siguiente = temp->siguiente;
+            temp->siguiente = nuevo;
+        }
+    }
+
+    void desencolar() {
+        if (frente == NULL) return;
+        NodoCola* temp = frente;
+        cout << "CPU Ejecutando ID: " << temp->id << endl;
+        frente = frente->siguiente;
+        delete temp;
+    }
+
+    void mostrar() {
+        NodoCola* temp = frente;
+        while (temp != NULL) {
+            cout << "[ID: " << temp->id << " Prio: " << temp->prioridad << "] -> ";
+            temp = temp->siguiente;
+        }
+        cout << "NULL" << endl;
+    }
+};
+
+// INTEGRANTE 3: TEMA - GESTOR DE MEMORIA Y PERSISTENCIA (PILA Y ARCHIVOS)
+struct Bloque {
+    int idMemoria;
+    Bloque* siguiente;
+};
+
+class GestorMemoria {
+public:
+    Bloque* tope = NULL;
+
+    void push(int _id) {
+        Bloque* nuevo = new Bloque{_id, tope};
+        tope = nuevo;
+    }
+
+    void pop() {
+        if (tope == NULL) return;
+        Bloque* temp = tope;
+        tope = tope->siguiente;
+        delete temp;
+    }
+
+    void verificar() {
+        Bloque* temp = tope;
+        while (temp != NULL) {
+            cout << "| ID: " << temp->idMemoria << " |" << endl;
+            temp = temp->siguiente;
+        }
+    }
+
+    void guardar() {
+        ofstream archivo("memoria.txt");
+        Bloque* temp = tope;
+        while (temp != NULL) {
+            archivo << temp->idMemoria << endl;
+            temp = temp->siguiente;
+        }
+        archivo.close();
+    }
+
+    void cargar() {
+        ifstream archivo("memoria.txt");
+        int _id;
+        while (archivo >> _id) {
+            push(_id);
+        }
+        archivo.close();
+    }
+};
+
+// INTEGRANTE 4: TEMA - INTERFAZ DE USUARIO INTEGRAL
+int main() {
+    GestorProcesos lista;
+    PlanificadorCPU cola;
+    GestorMemoria pila;
+    
+    int opcion, id, prio;
+    string nom;
+
+    do {
+        cout << "\n=== SISTEMA OPERATIVO ===" << endl;
+        cout << "1. Insertar Proceso (Lista)\n2. Buscar Proceso (Lista)\n3. Modificar Prioridad (Lista)\n4. Eliminar Proceso (Lista)" << endl;
+        cout << "5. Encolar CPU (Cola)\n6. Ejecutar en CPU (Cola)\n7. Mostrar Cola CPU" << endl;
+        cout << "8. Asignar Memoria (Pila)\n9. Liberar Memoria (Pila)\n10. Mostrar Memoria\n11. Guardar Todo\n12. Cargar Todo\n0. Salir" << endl;
+        cout << "Opcion: ";
+        cin >> opcion;
+
+        switch(opcion) {
+            case 1:
+                cout << "ID, Nombre, Prio: "; cin >> id >> nom >> prio;
+                lista.insertar(id, nom, prio);
+                break;
+            case 2:
+                cout << "ID a buscar: "; cin >> id;
+                if(lista.buscar(id)) cout << "Proceso encontrado." << endl;
+                else cout << "No encontrado." << endl;
+                break;
+            case 3:
+                cout << "ID y Nueva Prio: "; cin >> id >> prio;
+                lista.modificarPrioridad(id, prio);
+                break;
+            case 4:
+                cout << "ID a eliminar: "; cin >> id;
+                lista.eliminar(id);
+                break;
+            case 5:
+                cout << "ID y Prio para CPU: "; cin >> id >> prio;
+                cola.encolar(id, prio);
+                break;
+            case 6:
+                cola.desencolar();
+                break;
+            case 7:
+                cola.mostrar();
+                break;
+            case 8:
+                cout << "ID Bloque Memoria: "; cin >> id;
+                pila.push(id);
+                break;
+            case 9:
+                pila.pop();
+                break;
+            case 10:
+                pila.verificar();
+                break;
+            case 11:
+                pila.guardar();
+                cout << "Datos guardados." << endl;
+                break;
+            case 12:
+                pila.cargar();
+                cout << "Datos cargados." << endl;
+                break;
+        }
+    } while(opcion != 0);
+
+    return 0;
+}
